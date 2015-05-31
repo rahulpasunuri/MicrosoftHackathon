@@ -36,7 +36,9 @@ with open('original/Burglary_Map.csv', 'rb') as csvfile:
 				data[zipCode] = (1,0)
 			else:
 				data[zipCode] = (0,1)
+				
 	f2 = open("pruned/burglery.csv","w")			
+	f2.write('"zip", "False Alarms", "Burglary"\n')
 	for key in data:
 		tup=data[key]
 		f2.write(str(key)+","+str(tup[0])+","+str(tup[1])+"\n")
@@ -63,7 +65,8 @@ with open('original/Crime_Map.csv', 'rb') as csvfile:
 		else:
 			data[zipCode] = 1
 	
-	f2 = open("pruned/crime.csv","w")			
+	f2 = open("pruned/crime.csv","w")
+	f2.write('"zip", "Crime"\n')			
 	for key in data:
 		tup=data[key]
 		f2.write(str(key)+","+str(tup)+"\n")
@@ -88,6 +91,7 @@ with open('original/public_and_private_schools.csv', 'rb') as csvfile:
 			data[zipCode] = 1
 	
 	f2 = open("pruned/schools.csv","w")			
+	f2.write('"zip", "Schools"\n')
 	for key in data:
 		tup=data[key]
 		f2.write(str(key)+","+str(tup)+"\n")
@@ -119,7 +123,10 @@ with open('original/neighbor.csv', 'rb') as csvfile:
 				r[index] = 1
 				data[zipCode] = r
 	
-	f2 = open("pruned/general.csv","w")			
+	f2 = open("pruned/general.csv","w")
+	
+	cols = [ "\""+s+"\"" for s in cols]	
+	f2.write("\"zip\""+",".join(cols)+"\n")			
 	for key in data:
 		tup=data[key]
 		tup = [str(x) for x in tup]
@@ -143,7 +150,9 @@ with open('original/Prostitution_Map.csv', 'rb') as csvfile:
 		else:
 			data[zipCode] = 1
 	
-	f2 = open("pruned/prost.csv","w")			
+	f2 = open("pruned/prost.csv","w")	
+	f2.write('"zip", "Prost"')
+			
 	for key in data:
 		tup=data[key]
 		f2.write(str(key)+","+str(tup)+"\n")
@@ -186,7 +195,9 @@ with open('original/Business.csv', 'rb') as csvfile:
 			data[zipCode] = [0 for i in range(len(li))]
 			data[zipCode][index] = 1
 	
-	f2 = open("pruned/business.csv","w")			
+	f2 = open("pruned/business.csv","w")
+	li = [ "\""+s+"\"" for s in li]			
+	f2.write("\"zip\""+","+",".join(li)+"\n")
 	for key in data:
 		tup=data[key]
 		tup = [str(x) for x in tup]
