@@ -5,31 +5,7 @@ import json
 
 
 def getZipCode(lat, lon):
-	#lat=47.594027105
-	#lon=-122.290328507
-	pincode = []
-	baseurl = "https://maps.googleapis.com/maps/api/geocode/json?latlng="
-	url = baseurl + str(lat)+ "," + str(lon)
-	data = json.load(urlopen(url))
-	#print data
-	
-	results =  data.get('results')
-	for addr in results:
-		for comp in addr.get("address_components"):
-			if "postal_code" in comp.get("types"):
-				# print comp.get("short_name")
-				if len(comp.get("short_name"))!=0:
-					pincode.append(comp.get("short_name"))
-	print data
-	if len(pincode) ==0:
-		#print lat, lat[:len(lat)-1]		
-		#return getZipCode(lat[:len(lat)-1], lon[:len(lon)-1]) 
-		print data
-	
-	print lat, lon
-	m = max(set(pincode), key=pincode.count)
-	#print m
-	return m
+	return random.randrange(10)
 	
 
 
@@ -201,16 +177,16 @@ with open('original/Business.csv', 'rb') as csvfile:
 		zipCode=row["City, State and ZIP"].split()
 		zipCode = zipCode[len(zipCode)-1]
 		
-		
+		#print zipCode
 		owner = row["Ownership"]
 		index = li.index(owner)
 		
 		#print zipCode, owner
 		
 		if "-" in zipCode:
-			#print zipCode
+			print zipCode
 			zipCode = zipCode.split("-")[0]
-			#print zipCode	
+			print zipCode	
 		
 		if len(zipCode) > 5:
 			zipCode = zipCode[:5]
