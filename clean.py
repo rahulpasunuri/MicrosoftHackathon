@@ -2,77 +2,82 @@ from urllib2 import *
 import csv
 import random
 import json
+import math
+import re
 
+listOfCoords = []
+def distance_on_unit_sphere(lat1, long1, lat2, long2):
+ 
+    # Convert latitude and longitude to 
+    # spherical coordinates in radians.
+    degrees_to_radians = math.pi/180.0
+         
+    # phi = 90 - latitude
+    phi1 = (90.0 - lat1)*degrees_to_radians
+    phi2 = (90.0 - lat2)*degrees_to_radians
+         
+    # theta = longitude
+    theta1 = long1*degrees_to_radians
+    theta2 = long2*degrees_to_radians
+         
+    # Compute spherical distance from spherical coordinates.
+         
+    # For two locations in spherical coordinates 
+    # (1, theta, phi) and (1, theta, phi)
+    # cosine( arc length ) = 
+    #    sin phi sin phi' cos(theta-theta') + cos phi cos phi'
+    # distance = rho * arc length
+     
+    cos = (math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) + 
+           math.cos(phi1)*math.cos(phi2))
+    arc = math.acos( cos )
+ 
+    # Remember to multiply arc by the radius of the earth 
+    # in your favorite set of units to get length.
+    return arc
 
-def getZipCode(lat, lon):
-	#lat=47.594027105
-	#lon=-122.290328507
-	pincode = []
-	baseurl = "https://maps.googleapis.com/maps/api/geocode/json?latlng="
-	url = baseurl + str(lat)+ "," + str(lon)
-	data = json.load(urlopen(url))
-	#print data
-	
-	results =  data.get('results')
-	for addr in results:
-		for comp in addr.get("address_components"):
-			if "postal_code" in comp.get("types"):
-				# print comp.get("short_name")
-				if len(comp.get("short_name"))!=0:
-					pincode.append(comp.get("short_name"))
-	print data
-	if len(pincode) ==0:
-		#print lat, lat[:len(lat)-1]		
-		#return getZipCode(lat[:len(lat)-1], lon[:len(lon)-1]) 
-		print data
-	
-	print lat, lon
-	m = max(set(pincode), key=pincode.count)
-	#print m
-	return m
-	
+def readFromCSV():
+	lat = []
+	lng = []
+	f = open( 'Seattle_Zip_Codes.csv', 'rU' ) #open the file in read universal mode
+	for line in f:
+	    cells = line.split( "," )
+	    lats = re.findall('\d+.\d+',cells[1])
+	    latVal = 0
+	    longVal = 0
+	    for l in lats:
+	    	latVal = l
+	    longs = re.findall('\d+.\d+',cells[2])
+	    for l in longs:
+	    	longVal = l
+	    # print latVal,longVal
+	    zipCode = cells[5]
+	    listOfCoords.append((latVal,longVal,zipCode)) #since we want the first, second and third column
+	f.close()
+	listOfCoords.pop(0)
+readFromCSV()
 
-
-random.seed()
-#code to handle burglary..
-data={}
-
-with open('original/Burglary_Map.csv', 'rb') as csvfile:
-	reader = csv.DictReader(csvfile, delimiter=',', quotechar="\"")
-	i=0
-	for row in reader:
-		
-		lat = row["Latitude"]	
-		log = row["Longitude"]
-		
-		zipCode=getZipCode(lat,log)
-		
-		isFalse = True
-		
-		if row["Event Clearance Group"] == "BURGLARY":
-			isFalse = False
-		
-		#each tuple will have (false alarms, burglaries)
-		if zipCode in data:
-			tup = data[zipCode]
-			
-			if isFalse:
-				data[zipCode] = (tup[0]+1, tup[1])
-			else:
-				data[zipCode] = (tup[0], tup[1]+1)
+def getZipCode(lat,lng):
+	i = 0
+	minArc = 0
+	lat = float(lat)
+	lng = -float(lng)
+	for cords in listOfCoords:
+		latVal =  float(cords[0])
+		longVal = float(cords[1])
+		if(i == 0):
+			minArc = distance_on_unit_sphere(lat,lng,latVal,longVal)
+			i = 1
+			zipCode = cords[2]
 		else:
-			if isFalse:
-				data[zipCode] = (1,0)
-			else:
-				data[zipCode] = (0,1)
-				
-	f2 = open("pruned/burglery.csv","w")			
-	f2.write('"zip", "False Alarms", "Burglary"\n')
-	for key in data:
-		tup=data[key]
-		f2.write(str(key)+","+str(tup[0])+","+str(tup[1])+"\n")
+			arc = distance_on_unit_sphere(lat,lng,latVal,longVal)
+			if(arc < minArc):
+				minArc = arc
+				zipCode = cords[2]
+			
+	return zipCode
 	
-	f2.close()
+random.seed()
 
 
 #code for crimes..
@@ -164,29 +169,6 @@ with open('original/neighbor.csv', 'rb') as csvfile:
 	f2.close()
 
 
-#code for prostituition.
-data={}
-with open('original/Prostitution_Map.csv', 'rb') as csvfile:
-	reader = csv.DictReader(csvfile, delimiter=',', quotechar="\"")
-	i=0
-	for row in reader:
-			
-		zipCode=getZipCode(row["Latitude"], row["Longitude"])
-		
-		#each item will have count of crimes for a zip code..
-		if zipCode in data:
-			data[zipCode] = data[zipCode]+1		
-		else:
-			data[zipCode] = 1
-	
-	f2 = open("pruned/prost.csv","w")	
-	f2.write('"zip", "Prost"')
-			
-	for key in data:
-		tup=data[key]
-		f2.write(str(key)+","+str(tup)+"\n")
-	
-	f2.close()
 
 
 #code for Business.
@@ -214,7 +196,8 @@ with open('original/Business.csv', 'rb') as csvfile:
 		
 		if len(zipCode) > 5:
 			zipCode = zipCode[:5]
-				
+		if zipCode[:2]!="98":
+			continue
 		#each item will have count of crimes for a zip code..
 		if zipCode in data:
 			r = data[zipCode]
